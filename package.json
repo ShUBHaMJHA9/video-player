@@ -1,13 +1,13 @@
 {
   "name": "video-player",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "vercel-build": "echo Build completed"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^5.1.0",
-    "uuid": "^9.0.0",
-    "body-parser": "^2.2.0"
+    "express": "^4.19.2",
+    "mongodb": "^6.8.0",
+    "uuid": "^9.0.1"
   }
 }
