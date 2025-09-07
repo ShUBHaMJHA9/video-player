@@ -1,34 +1,30 @@
 // server.js
-// Simple Express backend that stores video metadata in a JSON file (or in memory)
-// POST /api/videos  -> { id }  (send JSON body with { title, servers: [...] })
-// GET  /api/videos/:id -> returns stored video object
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 
+const app = express();
 const DB_FILE = path.join(__dirname, 'videos_db.json');
 
+// Helpers for DB
 function readDB() {
   try {
     const raw = fs.readFileSync(DB_FILE, 'utf8');
     return JSON.parse(raw);
   } catch (e) {
-    return {}; // empty db
+    return {};
   }
 }
-
 function writeDB(db) {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
 }
 
-const app = express();
 app.use(bodyParser.json({ limit: '1mb' }));
-app.use(express.static('public')); // optional: serve frontend from /public
+app.use(express.static('public')); // serve frontend files from /public
 
-// Create/Save video metadata
+// Save video metadata
 app.post('/api/videos', (req, res) => {
   const body = req.body || {};
   if (!body.servers || !Array.isArray(body.servers) || body.servers.length === 0) {
@@ -39,14 +35,14 @@ app.post('/api/videos', (req, res) => {
   db[id] = {
     id,
     title: body.title || `Video ${id}`,
-    servers: body.servers, // expect [{ name, qualities: [{res,url}], subtitles: [{lang,url}] }]
+    servers: body.servers,
     createdAt: new Date().toISOString()
   };
   writeDB(db);
-  res.json({ id });
+  res.json({ id, url: `/video?id=${id}` }); // return endpoint url too
 });
 
-// Get video metadata by id
+// Get video metadata (internal API)
 app.get('/api/videos/:id', (req, res) => {
   const id = req.params.id;
   const db = readDB();
@@ -54,11 +50,38 @@ app.get('/api/videos/:id', (req, res) => {
   res.json(db[id]);
 });
 
-// Optionally list all (for dev)
+// 🎬 Video player endpoint
+app.get('/video', (req, res) => {
+  const id = req.query.id;
+  if (!id) return res.status(400).send('Missing video id');
+
+  const db = readDB();
+  if (!db[id]) return res.status(404).send('Video not found');
+
+  // Serve the HTML player page (public/player.html)
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// List all videos (dev)
 app.get('/api/videos', (req, res) => {
   const db = readDB();
   res.json(Object.values(db));
 });
 
+// Add this new endpoint
+app.get('/video', (req, res) => {
+  const id = req.query.id;
+  if (!id) return res.status(400).send('Missing id');
+
+  const db = readDB();
+  const video = db[id];
+  if (!video) return res.status(404).send('Video not found');
+
+  // Send JSON (or you can render HTML here)
+  res.json(video);
+});
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT}`));
+

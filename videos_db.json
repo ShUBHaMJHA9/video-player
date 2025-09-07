@@ -1,0 +1,48 @@
+{
+  "af38ae43-9f4f-47e5-a3cc-dacc3dcfd575": {
+    "id": "af38ae43-9f4f-47e5-a3cc-dacc3dcfd575",
+    "title": "Its Just an video sample",
+    "servers": [
+      {
+        "name": "Server 1",
+        "qualities": [
+          {
+            "res": "480p",
+            "url": "https://www.w3schools.com/html/mov_bbb.mp4"
+          },
+          {
+            "res": "720p",
+            "url": "https://www.w3schools.com/html/mov_bbb.mp4"
+          }
+        ],
+        "subtitles": [
+          {
+            "lang": "en",
+            "url": "https://example.com/sub.en.vtt"
+          }
+        ]
+      },
+      {
+        "name": "Server 2",
+        "qualities": [
+          {
+            "res": "720p",
+            "url": "https://example.com/video.mp4"
+          },
+          {
+            "res": "480p",
+            "url": "https://example.com/video.m3u8",
+            "type": "hls"
+          }
+        ],
+        "subtitles": [
+          {
+            "lang": "English",
+            "url": "https://example.com/subtitles.vtt"
+          }
+        ]
+      }
+    ],
+    "createdAt": "2025-09-06T10:30:00.621Z"
+  }
+}
