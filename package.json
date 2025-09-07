@@ -1,17 +1,13 @@
 {
   "name": "video-player",
   "version": "1.0.0",
-  "description": "Video player with API endpoints",
   "main": "index.js",
   "scripts": {
-    "dev": "vercel dev"
+    "vercel-build": "echo Build completed"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "body-parser": "^2.2.0",
     "express": "^5.1.0",
-    "uuid": "^12.0.0"
+    "uuid": "^9.0.0",
+    "body-parser": "^2.2.0"
   }
 }
