@@ -9,602 +9,800 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
+    /* Base styles for all devices */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #111;
+        color: white;
+        line-height: 1.6;
+    }
+    
+    .video-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px;
+        margin: 20px auto;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        -webkit-overflow-scrolling: touch;
+    }
+
+    video {
+        display: block;
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        aspect-ratio: 16/9;
+    }
+
+    .top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 10;
+    }
+
+    .controls {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        transform: translateY(100%);
+        z-index: 10;
+        box-sizing: border-box;
+    }
+
+    .video-container:hover .controls,
+    .controls.active,
+    .video-container:hover .top-bar,
+    .top-bar.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .progress-container {
+        width: 100%;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        border-radius: 4px;
+        position: absolute;
+        bottom: 70px;
+        left: 0;
+        overflow: visible;
+        z-index: 10;
+        transition: opacity 0.3s ease;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(to right, #ff0000, #cc0000);
+        width: 0;
+        border-radius: 4px;
+        position: relative;
+        transition: width 0.1s linear;
+        box-shadow: 0 0 12px rgba(204, 0, 0, 0.8);
+    }
+
+    .progress-bar::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        background: #ff0000;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(204, 0, 0, 0.8);
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .progress-bar:hover::after {
+        background: #cc0000;
+        box-shadow: 0 0 12px rgba(204, 0, 0, 1);
+        transform: translateY(-50%) scale(1.2);
+    }
+
+    .progress-container:hover .progress-bar {
+        transform: scaleY(1.2);
+    }
+
+    .control-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.8rem;
+        cursor: pointer;
+        padding: 0 10px;
+        transition: color 0.2s, transform 0.2s, opacity 0.2s;
+        opacity: 0.9;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .control-btn:hover {
+        color: #ff0000;
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    .control-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        bottom: 40px;
+        left: 0;
+        background: rgba(0, 0, 0, 0.9);
+        min-width: 120px;
+        z-index: 10;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        border: 1px solid #ff0000;
+    }
+
+    .dropdown:hover .dropdown-content,
+    .dropdown:focus-within .dropdown-content {
+        display: block;
+    }
+
+    .dropdown-content button {
+        color: white;
+        padding: 10px 12px;
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 700;
+        transition: background 0.2s;
+    }
+
+    .dropdown-content button:hover,
+    .dropdown-content button:focus {
+        background: #ff0000;
+    }
+
+    .time-display {
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .video-title-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .video-title {
+        color: white;
+        font-size: 1.4rem;
+        font-weight: 700;
+        text-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
+        max-width: 50%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .top-right-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .server-indicator,
+    .quality-indicator {
+        color: white;
+        font-size: 0.9rem;
+        background: linear-gradient(to right, #ff0000, #cc0000);
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-weight: 700;
+        box-shadow: 0 0 8px rgba(204, 0, 0, 0.6);
+    }
+
+    .footer {
+        width: 100%;
+        max-width: 800px;
+        margin: 10px auto;
+        background: #111;
+        border-radius: 8px;
+        padding: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        box-sizing: border-box;
+    }
+
+    .embed-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .embed-container input {
+        background: #222;
+        color: white;
+        border: none;
+        padding: 8px;
+        border-radius: 4px;
+        width: 60%;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+    }
+
+    .embed-container input:focus {
+        outline: 2px solid #ff0000;
+    }
+
+    .embed-container button {
+        background: #ff0000;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+    }
+
+    .embed-container button:hover,
+    .embed-container button:focus {
+        background: #cc0000;
+    }
+
+    .overlay-play {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 5rem;
+        color: rgba(255, 255, 255, 0.8);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 5;
+        pointer-events: none;
+    }
+
+    .video-container.paused .overlay-play {
+        opacity: 1;
+    }
+
+    .more-dropdown {
+        display: none;
+        position: absolute;
+        top: 40px;
+        right: 0;
+        background: rgba(0, 0, 0, 0.9);
+        min-width: 160px;
+        z-index: 10;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        border: 1px solid #ff0000;
+    }
+
+    .more-dropdown.active {
+        display: block;
+    }
+
+    .more-dropdown button,
+    .more-dropdown label {
+        color: white;
+        padding: 10px 12px;
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 700;
+        transition: background 0.2s;
+        display: block;
+    }
+
+    .more-dropdown button:hover,
+    .more-dropdown button:focus,
+    .more-dropdown label:hover,
+    .more-dropdown label:focus {
+        background: #ff0000;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .gesture-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 1.5rem;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px 20px;
+        border-radius: 8px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .display-popup {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #ff0000;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        z-index: 20;
+        width: 300px;
+        max-width: 90%;
+    }
+
+    .display-popup.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .display-popup h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-align: center;
+        text-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
+    }
+
+    .display-popup label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .display-popup input[type="range"] {
+        width: 100%;
+        -webkit-appearance: none;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        height: 6px;
+        outline: none;
+        cursor: pointer;
+    }
+
+    .display-popup input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        background: #ff0000;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(204, 0, 0, 0.8);
+    }
+
+    .display-popup input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: #ff0000;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(204, 0, 0, 0.8);
+        border: none;
+    }
+
+    .display-popup input[type="range"]:hover::-webkit-slider-thumb,
+    .display-popup input[type="range"]:hover::-moz-range-thumb {
+        background: #cc0000;
+    }
+
+    .display-popup .slider-container {
+        margin-bottom: 15px;
+    }
+
+    .display-popup .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .display-popup .close-btn:hover,
+    .display-popup .close-btn:focus {
+        color: #ff0000;
+    }
+
+    #loadingIndicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 1.2rem;
+        display: none;
+        z-index: 15;
+    }
+
+    #errorMessage {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 0, 0, 0.3);
+        padding: 20px;
+        border-radius: 8px;
+        color: white;
+        text-align: center;
+        display: none;
+        z-index: 15;
+    }
+
+    #bufferIndicator {
+        color: white;
+        font-size: 1.5rem;
+        display: none;
+    }
+
+    /* Mobile Styles (up to 640px) */
+    @media (max-width: 640px) {
         .video-container {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+            margin: 10px auto;
         }
 
-        video {
-            display: block;
-            width: 100%;
-            height: auto;
-            object-fit: contain;
-        }
-
+        .controls,
         .top-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent);
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 10;
-        }
-
-        .controls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            transform: translateY(100%);
-            z-index: 10;
-            box-sizing: border-box;
-        }
-
-        .video-container:hover .controls,
-        .controls.active,
-        .video-container:hover .top-bar,
-        .top-bar.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .progress-container {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            border-radius: 4px;
-            position: absolute;
-            bottom: 60px;
-            left: 0;
-            overflow: visible;
-            z-index: 10;
-            transition: opacity 0.3s ease;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(to right, #ff0000, #cc0000);
-            width: 0;
-            border-radius: 4px;
-            position: relative;
-            transition: width 0.1s linear;
-            box-shadow: 0 0 12px rgba(204, 0, 0, 0.8);
-        }
-
-        .progress-bar::after {
-            content: '';
-            position: absolute;
-            right: -8px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            background: #ff0000;
-            border-radius: 50%;
-            box-shadow: 0 0 8px rgba(204, 0, 0, 0.8);
-            transition: background 0.2s, box-shadow 0.2s;
-        }
-
-        .progress-bar:hover::after {
-            background: #cc0000;
-            box-shadow: 0 0 12px rgba(204, 0, 0, 1);
-            transform: translateY(-50%) scale(1.2);
-        }
-
-        .progress-container:hover .progress-bar {
-            transform: scaleY(1.2);
+            padding: 8px;
         }
 
         .control-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.8rem;
-            cursor: pointer;
-            padding: 0 10px;
-            transition: color 0.2s, transform 0.2s, opacity 0.2s;
-            opacity: 0.9;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .control-btn:hover {
-            color: #ff0000;
-            transform: scale(1.2);
-            opacity: 1;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            bottom: 40px;
-            left: 0;
-            background: rgba(0, 0, 0, 0.8);
-            min-width: 120px;
-            z-index: 10;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            border: 1px solid #ff0000;
-        }
-
-        .dropdown:hover .dropdown-content,
-        .dropdown:focus-within .dropdown-content {
-            display: block;
-        }
-
-        .dropdown-content button {
-            color: white;
-            padding: 8px 12px;
-            width: 100%;
-            text-align: left;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 700;
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            transition: background 0.2s;
-        }
-
-        .dropdown-content button:hover,
-        .dropdown-content button:focus {
-            background: #ff0000;
+            font-size: 1.5rem;
+            padding: 0 6px;
         }
 
         .time-display {
-            color: white;
-            font-size: 1rem;
-            font-weight: 700;
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            white-space: nowrap;
+            font-size: 0.9rem;
         }
 
-        .video-title-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .progress-container {
+            height: 6px;
+            bottom: 50px;
         }
 
         .video-title {
-            color: white;
-            font-size: 1.4rem;
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-weight: 700;
-            text-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
-            max-width: 50%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .top-right-controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
+            font-size: 1.1rem;
+            max-width: 40%;
         }
 
         .server-indicator,
         .quality-indicator {
-            color: white;
-            font-size: 0.9rem;
-            background: linear-gradient(to right, #ff0000, #cc0000);
-            padding: 3px 12px;
-            border-radius: 12px;
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-weight: 700;
-            box-shadow: 0 0 8px rgba(204, 0, 0, 0.6);
+            font-size: 0.8rem;
+            padding: 3px 8px;
         }
 
         .footer {
-            width: 100%;
-            max-width: 800px;
-            margin: 10px auto;
-            background: #111;
-            border-radius: 8px;
             padding: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            box-sizing: border-box;
-        }
-
-        .embed-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
         .embed-container input {
-            background: #222;
-            color: white;
-            border: none;
-            padding: 6px;
-            border-radius: 4px;
-            width: 300px;
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-size: 0.9rem;
-            box-sizing: border-box;
-        }
-
-        .embed-container input:focus {
-            outline: 2px solid #ff0000;
+            width: 60%;
+            font-size: 0.8rem;
         }
 
         .embed-container button {
-            background: #ff0000;
-            color: white;
-            border: none;
             padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-        }
-
-        .embed-container button:hover,
-        .embed-container button:focus {
-            background: #cc0000;
+            font-size: 0.8rem;
         }
 
         .overlay-play {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 5rem;
-            color: rgba(255, 255, 255, 0.8);
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 5;
-            pointer-events: none;
+            font-size: 3.5rem;
         }
 
-        .video-container.paused .overlay-play {
-            opacity: 1;
-        }
-
-        .more-dropdown {
-            display: none;
-            position: absolute;
-            top: 40px;
-            right: 0;
-            background: rgba(0, 0, 0, 0.8);
-            min-width: 160px;
-            z-index: 10;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            border: 1px solid #ff0000;
-        }
-
-        .more-dropdown.active {
-            display: block;
-        }
-
-        .more-dropdown button,
-        .more-dropdown label {
-            color: white;
-            padding: 8px 12px;
-            width: 100%;
-            text-align: left;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 700;
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            transition: background 0.2s;
-            display: block;
-        }
-
-        .more-dropdown button:hover,
-        .more-dropdown button:focus,
-        .more-dropdown label:hover,
-        .more-dropdown label:focus {
-            background: #ff0000;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .gesture-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 1.5rem;
-            font-family: 'Roboto', sans-serif;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 8px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 10;
-            pointer-events: none;
+        .dropdown-content {
+            min-width: 100px;
+            bottom: 35px;
         }
 
         .display-popup {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #ff0000;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-            z-index: 20;
-            width: 300px;
-            max-width: 90%;
-            color: white;
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-
-        .display-popup.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            width: 280px;
+            padding: 15px;
         }
 
         .display-popup h3 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            text-align: center;
-            text-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
+            font-size: 1.1rem;
         }
 
         .display-popup label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        
+        .control-group {
+            gap: 8px;
+        }
+    }
+
+    /* Small Mobile Styles (up to 480px) */
+    @media (max-width: 480px) {
+        .video-title {
+            font-size: 1rem;
+            max-width: 35%;
         }
 
-        .display-popup input[type="range"] {
+        .control-btn {
+            font-size: 1.3rem;
+            padding: 0 4px;
+        }
+
+        .time-display {
+            font-size: 0.8rem;
+        }
+
+        .embed-container {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .embed-container input {
             width: 100%;
-            -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            height: 6px;
-            outline: none;
-            cursor: pointer;
+        }
+        
+        .embed-container button {
+            width: 100%;
         }
 
+        .display-popup {
+            width: 260px;
+            padding: 12px;
+        }
+        
+        .controls {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .control-group:last-child {
+            margin-top: 8px;
+            justify-content: center;
+            width: 100%;
+        }
+    }
+
+    /* Tablet Styles (641px to 1024px) */
+    @media (min-width: 641px) and (max-width: 1024px) {
+        .video-container {
+            max-width: 90%;
+        }
+        
+        .controls,
+        .top-bar {
+            padding: 10px 14px;
+        }
+        
+        .progress-container {
+            bottom: 65px;
+        }
+        
+        .footer {
+            max-width: 90%;
+        }
+    }
+
+    /* High DPI/Retina displays */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .progress-bar::after,
+        .server-indicator,
+        .quality-indicator,
         .display-popup input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #ff0000;
-            border-radius: 50%;
-            box-shadow: 0 0 8px rgba(204, 0, 0, 0.8);
+            box-shadow: 0 0 10px rgba(204, 0, 0, 0.7);
+        }
+    }
+
+    /* Focus styles for accessibility */
+    .control-btn:focus,
+    .dropdown-content button:focus,
+    .embed-container button:focus,
+    .display-popup input[type="range"]:focus {
+        outline: 2px solid #ff0000;
+        outline-offset: 2px;
+    }
+
+    /* Touch device optimizations */
+    @media (hover: none) {
+        .video-container:hover .controls,
+        .video-container:hover .top-bar {
+            opacity: 0;
         }
 
-        .display-popup input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: #ff0000;
-            border-radius: 50%;
-            box-shadow: 0 0 8px rgba(204, 0, 0, 0.8);
-            border: none;
+        .controls.active,
+        .top-bar.active {
+            opacity: 1;
         }
-
-        .display-popup input[type="range"]:hover::-webkit-slider-thumb,
-        .display-popup input[type="range"]:hover::-moz-range-thumb {
-            background: #cc0000;
+        
+        .control-btn {
+            padding: 8px;
         }
-
-        .display-popup .slider-container {
-            margin-bottom: 15px;
+        
+        .progress-bar::after {
+            width: 18px;
+            height: 18px;
         }
+    }
 
-        .display-popup .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
+    /* Light Theme Styles */
+    .light-theme {
+        background: #f0f0f0;
+        color: #000;
+    }
 
-        .display-popup .close-btn:hover,
-        .display-popup .close-btn:focus {
-            color: #ff0000;
-        }
+    .light-theme .video-container {
+        background: #fff;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
 
-        #loadingIndicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 1.2rem;
-            display: none;
-            z-index: 15;
-        }
+    .light-theme .top-bar {
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), transparent);
+    }
 
-        #errorMessage {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 0, 0, 0.3);
-            padding: 20px;
-            border-radius: 8px;
-            color: white;
-            text-align: center;
-            display: none;
-            z-index: 15;
-        }
+    .light-theme .controls {
+        background: linear-gradient(to top, rgba(255, 255, 255, 0.7), transparent);
+    }
 
-        #bufferIndicator {
-            color: white;
-            font-size: 1.5rem;
-            display: none;
-        }
+    .light-theme .control-btn {
+        color: #000;
+    }
 
-        @media (max-width: 640px) {
-            .video-container {
-                border-radius: 8px;
-            }
+    .light-theme .control-btn:hover {
+        color: #ff0000;
+    }
 
-            .controls,
-            .top-bar {
-                padding: 6px;
-            }
+    .light-theme .time-display {
+        color: #000;
+    }
 
-            .control-btn {
-                font-size: 1.5rem;
-                padding: 0 6px;
-            }
+    .light-theme .video-title {
+        color: #000;
+        text-shadow: none;
+    }
 
-            .time-display {
-                font-size: 0.9rem;
-            }
+    .light-theme .server-indicator,
+    .light-theme .quality-indicator {
+        color: #fff;
+    }
 
-            .progress-container {
-                height: 5px;
-                bottom: 45px;
-            }
+    .light-theme .footer {
+        background: #eee;
+    }
 
-            .video-title {
-                font-size: 1.2rem;
-                max-width: 40%;
-            }
+    .light-theme .embed-container input {
+        background: #ddd;
+        color: #000;
+    }
 
-            .server-indicator,
-            .quality-indicator {
-                font-size: 0.8rem;
-                padding: 2px 8px;
-            }
+    .light-theme .display-popup {
+        background: rgba(255, 255, 255, 0.95);
+        color: #000;
+    }
 
-            .embed-container input {
-                width: 200px;
-                font-size: 0.8rem;
-            }
+    .light-theme .display-popup h3 {
+        text-shadow: none;
+    }
 
-            .embed-container button {
-                padding: 5px 10px;
-                font-size: 0.8rem;
-            }
+    .light-theme .display-popup .close-btn {
+        color: #000;
+    }
 
-            .overlay-play {
-                font-size: 3rem;
-            }
+    .light-theme .display-popup .close-btn:hover,
+    .light-theme .display-popup .close-btn:focus {
+        color: #ff0000;
+    }
 
-            .dropdown-content {
-                min-width: 100px;
-                bottom: 30px;
-            }
+    .light-theme .dropdown-content {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ff0000;
+    }
 
-            .display-popup {
-                width: 250px;
-                padding: 15px;
-            }
+    .light-theme .dropdown-content button {
+        color: #000;
+    }
 
-            .display-popup h3 {
-                font-size: 1rem;
-            }
+    .light-theme .dropdown-content button:hover,
+    .light-theme .dropdown-content button:focus {
+        background: #ff0000;
+        color: #fff;
+    }
 
-            .display-popup label {
-                font-size: 0.8rem;
-            }
-        }
+    .light-theme .more-dropdown {
+        background: rgba(255, 255, 255, 0.9);
+    }
 
-        @media (max-width: 480px) {
-            .video-title {
-                font-size: 1rem;
-                max-width: 35%;
-            }
+    .light-theme .more-dropdown button,
+    .light-theme .more-dropdown label {
+        color: #000;
+    }
 
-            .control-btn {
-                font-size: 1.3rem;
-            }
+    .light-theme .more-dropdown button:hover,
+    .light-theme .more-dropdown button:focus,
+    .light-theme .more-dropdown label:hover,
+    .light-theme .more-dropdown label:focus {
+        background: #ff0000;
+        color: #fff;
+    }
 
-            .time-display {
-                font-size: 0.8rem;
-            }
+    .light-theme .progress-container {
+        background: rgba(0, 0, 0, 0.1);
+    }
 
-            .embed-container input {
-                width: 150px;
-            }
+    .light-theme #loadingIndicator {
+        color: #000;
+    }
 
-            .display-popup {
-                width: 200px;
-            }
-        }
+    .light-theme #errorMessage {
+        background: rgba(255, 0, 0, 0.1);
+        color: #000;
+    }
 
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-            .progress-bar,
-            .server-indicator,
-            .quality-indicator,
-            .display-popup input[type="range"]::-webkit-slider-thumb {
-                box-shadow: 0 0 10px rgba(204, 0, 0, 0.7);
-            }
-        }
+    .light-theme #bufferIndicator {
+        color: #000;
+    }
 
-        .control-btn:focus,
-        .dropdown-content button:focus,
-        .embed-container button:focus,
-        .display-popup input[type="range"]:focus {
-            outline: 2px solid #ff0000;
-            outline-offset: 2px;
-        }
+    .light-theme .gesture-overlay {
+        color: #000;
+        background: rgba(255, 255, 255, 0.7);
+    }
 
-        @media (hover: none) {
-            .video-container:hover .controls,
-            .video-container:hover .top-bar {
-                opacity: 0;
-            }
-
-            .controls.active,
-            .top-bar.active {
-                opacity: 1;
-            }
-        }
-    </style>
+    .light-theme .overlay-play {
+        color: rgba(0, 0, 0, 0.8);
+    }
+</style>
 </head>
 <body class="bg-gray-900 flex flex-col items-center justify-center min-h-screen">
     <div class="video-container" id="videoContainer">
@@ -629,6 +827,7 @@
                         <label for="subtitleUpload">Upload Subtitle</label>
                         <input type="file" id="subtitleUpload" accept=".vtt,.srt" class="hidden">
                         <button id="displayBtn">Display</button>
+                        <button id="themeToggleBtn">Toggle Theme</button>
                     </div>
                 </div>
                 <span class="server-indicator" id="serverIndicator">Server 1</span>
@@ -764,6 +963,7 @@
         const backBtn = document.getElementById('backBtn');
         const lockBtn = document.getElementById('lockBtn');
         const aspectDropdown = document.getElementById('aspectDropdown');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
 
         // State variables
         let videoData = {};
@@ -856,9 +1056,10 @@
             videoTitle.textContent = videoData.title || 'Untitled';
             populateServers();
             changeServer(0);
-            updateEmbedCode();
+            updateEmbedCode();   // will now insert the URL
             hideLoading();
         }
+
 
         // Populate servers
         function populateServers() {
@@ -1072,7 +1273,17 @@
                 });
             });
 
-            moreBtn.addEventListener('click', () => moreDropdown.classList.toggle('active'));
+            moreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moreDropdown.classList.toggle('active');
+            });
+
+            // Close more dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!moreDropdown.contains(e.target) && !moreBtn.contains(e.target)) {
+                    moreDropdown.classList.remove('active');
+                }
+            });
 
             displayBtn.addEventListener('click', () => displayPopup.classList.add('active'));
             closeDisplayBtn.addEventListener('click', () => displayPopup.classList.remove('active'));
@@ -1134,6 +1345,19 @@
                     showControls();
                 }
             });
+
+            themeToggleBtn.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            } else if (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                document.body.classList.add('light-theme');
+            }
         }
 
         // Handle fullscreen change
@@ -1259,11 +1483,28 @@
 
         // Copy embed code
         function copyEmbedCode() {
+            const embedCodeInput = document.getElementById("embedCode");
+            const copyEmbedBtn = document.getElementById("copyEmbedBtn");
+
+            if (!embedCodeInput) return;
+
             embedCodeInput.select();
-            document.execCommand('copy');
-            copyEmbedBtn.textContent = 'Copied!';
-            setTimeout(() => copyEmbedBtn.textContent = 'Copy Embed Code', 2000);
+            embedCodeInput.setSelectionRange(0, 99999); // mobile friendly
+
+            // modern clipboard API (better than execCommand)
+            navigator.clipboard.writeText(embedCodeInput.value)
+                .then(() => {
+                    copyEmbedBtn.textContent = 'Copied!';
+                    setTimeout(() => copyEmbedBtn.textContent = 'Copy Embed Code', 2000);
+                })
+                .catch(() => {
+                    // fallback
+                    document.execCommand('copy');
+                    copyEmbedBtn.textContent = 'Copied!';
+                    setTimeout(() => copyEmbedBtn.textContent = 'Copy Embed Code', 2000);
+                });
         }
+
 
         // Show gesture
         function showGesture(text) {
@@ -1392,9 +1633,17 @@
 
         // Update embed code
         function updateEmbedCode() {
-            const iframeSrc = `/video?id=${id}`;
-            embedCodeInput.value = `<iframe src="${iframeSrc}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
+            const embedCodeInput = document.getElementById("embedCode");
+            if (!embedCodeInput) return;
+
+            // use the id you already got when fetching videoData
+            const id = videoData?.id;
+            if (!id) return;
+
+            const url = `${window.location.origin}/video?id=${id}`;
+            embedCodeInput.value = `<iframe src="${url}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
         }
+
 
         init();
     </script>
