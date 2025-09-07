@@ -9,8 +9,7 @@ const app = express();
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(express.static('public')); // serve frontend files
 
-// MongoDB connection
-// URL-encode password if it contains special chars (like @)
+// MongoDB connection (URL-encode password if it contains special chars like @)
 const MONGO_URI =
   process.env.MONGO_URI ||
   'mongodb+srv://sh23becse50:Sjha%402005@bot.exfn3.mongodb.net/bot?retryWrites=true&w=majority&appName=bot';
@@ -31,7 +30,7 @@ MongoClient.connect(MONGO_URI)
     process.exit(1);
   });
 
-// Save video metadata
+// POST /api/videos → store video and return only id & url or error
 app.post('/api/videos', async (req, res) => {
   const body = req.body || {};
   if (!body.servers || !Array.isArray(body.servers) || body.servers.length === 0) {
@@ -48,14 +47,15 @@ app.post('/api/videos', async (req, res) => {
 
   try {
     await videosCollection.insertOne(videoData);
-    res.json({ id, url: `/video?id=${id}` });
+    // ✅ Return only id & url
+    return res.json({ id, url: `/video?id=${id}` });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to save video' });
+    return res.status(500).json({ error: 'Failed to save video' });
   }
 });
 
-// Get single video metadata by id
+// GET single video metadata by id
 app.get('/api/videos/:id', async (req, res) => {
   const id = req.params.id;
   try {
@@ -76,10 +76,7 @@ app.get('/video', async (req, res) => {
     const video = await videosCollection.findOne({ _id: id });
     if (!video) return res.status(404).send('Video not found');
 
-    // Return JSON if ?json=1
     if (req.query.json) return res.json(video);
-
-    // Serve HTML player
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   } catch (err) {
     res.status(500).send('Database error');
