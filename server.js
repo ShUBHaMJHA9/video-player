@@ -38,27 +38,55 @@ async function prepareDatabase() {
 }
 
 // ---------- ROUTES ----------
+
+// Create new video entry
 app.post('/api/videos', async (req, res) => {
   try {
     const collection = await prepareDatabase();
     const body = req.body || {};
+
     if (!body.servers || !Array.isArray(body.servers) || body.servers.length === 0) {
       return res.status(400).json({ error: 'servers array required' });
     }
 
     const id = uuidv4();
-    const videoDoc = { _id: id, title: body.title || `Video ${id}`, servers: body.servers, createdAt: new Date() };
+    const videoDoc = {
+      _id: id,
+      title: body.title || `Video ${id}`,
+      servers: body.servers,
+      createdAt: new Date(),
+    };
 
     await collection.insertOne(videoDoc);
 
     const host = req.headers.origin || `https://${req.headers.host}`;
-    return res.status(200).json({ id, url: `${host}/video/${id}` });
+    return res.status(201).json({
+      message: '✅ Video uploaded successfully',
+      id,
+      url: `${host}/api/videos/${id}`,
+    });
   } catch (err) {
     console.error('POST /api/videos error:', err);
     return res.status(500).json({ error: 'Failed to save video' });
   }
 });
 
+// Fetch video by ID
+app.get('/api/videos/:id', async (req, res) => {
+  try {
+    const collection = await prepareDatabase();
+    const video = await collection.findOne({ _id: req.params.id });
+
+    if (!video) return res.status(404).json({ error: 'Video not found' });
+
+    return res.json(video);
+  } catch (err) {
+    console.error('GET /api/videos/:id error:', err);
+    return res.status(500).json({ error: 'Failed to fetch video' });
+  }
+});
+
+// Health check
 app.get('/health', async (req, res) => {
   try {
     await prepareDatabase();
