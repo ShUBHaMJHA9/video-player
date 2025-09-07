@@ -32,14 +32,25 @@ async function start() {
   }
 
   try {
-    // Connect to MongoDB (no deprecated options)
     console.log('Connecting to MongoDB...');
-    dbClient = await MongoClient.connect(MONGO_URI);
+    dbClient = await MongoClient.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
     const db = dbClient.db(DB_NAME);
-    videosCollection = db.collection(COLLECTION);
-    console.log('✅ Connected to MongoDB:', DB_NAME, '/', COLLECTION);
 
-    // Start server
+    // Check if collection exists, otherwise create it
+    const collections = await db.listCollections({ name: COLLECTION }).toArray();
+    if (collections.length === 0) {
+      console.log(`Collection "${COLLECTION}" does not exist. Creating it...`);
+      videosCollection = await db.createCollection(COLLECTION);
+      console.log(`✅ Collection "${COLLECTION}" created.`);
+    } else {
+      videosCollection = db.collection(COLLECTION);
+      console.log(`✅ Using existing collection "${COLLECTION}".`);
+    }
+
+    // Optional: create unique index on _id
+    await videosCollection.createIndex({ _id: 1 }, { unique: true });
+
+    // Start Express server
     app.listen(PORT, () => {
       console.log(`Server listening on http://localhost:${PORT}`);
     });
@@ -48,6 +59,7 @@ async function start() {
     process.exit(1);
   }
 }
+
 
 // ========== ROUTES ==========
 
