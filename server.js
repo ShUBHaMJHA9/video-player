@@ -22,26 +22,31 @@ let videosCollection = null;
  * Connect to MongoDB and ensure collection exists
  */
 async function prepareDatabase() {
-  if (!MONGO_URI) throw new Error('MONGO_URI is not set');
+  try {
+    if (!MONGO_URI) throw new Error('MONGO_URI is not set');
 
-  if (!dbClient) {
-    dbClient = await MongoClient.connect(MONGO_URI);
-    const db = dbClient.db(DB_NAME);
+    if (!dbClient) {
+      dbClient = await MongoClient.connect(MONGO_URI);
+      const db = dbClient.db(DB_NAME);
 
-    // Ensure collection exists
-    const collections = await db.listCollections({ name: COLLECTION }).toArray();
-    if (collections.length === 0) {
-      console.log(`Creating collection "${COLLECTION}"...`);
-      videosCollection = await db.createCollection(COLLECTION);
-    } else {
-      videosCollection = db.collection(COLLECTION);
-      console.log(`✅ Using existing collection "${COLLECTION}".`);
+      // Ensure collection exists
+      const collections = await db.listCollections({ name: COLLECTION }).toArray();
+      if (collections.length === 0) {
+        console.log(`Creating collection "${COLLECTION}"...`);
+        videosCollection = await db.createCollection(COLLECTION);
+      } else {
+        videosCollection = db.collection(COLLECTION);
+        console.log(`✅ Using existing collection "${COLLECTION}".`);
+      }
+
+      console.log(`✅ Database ready: ${DB_NAME}/${COLLECTION}`);
     }
 
-    console.log(`✅ Database ready: ${DB_NAME}/${COLLECTION}`);
+    return videosCollection;
+  } catch (err) {
+    console.error('❌ prepareDatabase error:', err);
+    throw err;
   }
-
-  return videosCollection;
 }
 
 // ========== ROUTES ==========
@@ -69,7 +74,6 @@ app.post('/api/videos', async (req, res) => {
 
     await collection.insertOne(videoDoc);
 
-    // ✅ Generate absolute URL for Vercel
     const host = req.headers.origin || `https://${req.headers.host}`;
     return res.status(200).json({ id, url: `${host}/video/${id}` });
   } catch (err) {
@@ -135,8 +139,8 @@ app.get('/health', async (req, res) => {
   try {
     await prepareDatabase();
     res.json({ ok: true });
-  } catch {
-    res.json({ ok: false });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
   }
 });
 
