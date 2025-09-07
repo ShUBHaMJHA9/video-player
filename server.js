@@ -1,4 +1,3 @@
-
 // server.js
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -7,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const DB_FILE = path.join(__dirname, 'videos_db.json');
+const DB_FILE = path.join('/tmp', 'videos_db.json'); // use /tmp on Vercel
 
 // Helpers for DB
 function readDB() {
@@ -23,7 +22,7 @@ function writeDB(db) {
 }
 
 app.use(bodyParser.json({ limit: '1mb' }));
-app.use(express.static('public')); // serve frontend files from /public
+app.use(express.static('public')); // serve frontend files
 
 // Save video metadata
 app.post('/api/videos', (req, res) => {
@@ -40,10 +39,10 @@ app.post('/api/videos', (req, res) => {
     createdAt: new Date().toISOString()
   };
   writeDB(db);
-  res.json({ id, url: `/video?id=${id}` }); // return endpoint url too
+  res.json({ id, url: `/video?id=${id}` });
 });
 
-// Get video metadata (internal API)
+// Get single video metadata
 app.get('/api/videos/:id', (req, res) => {
   const id = req.params.id;
   const db = readDB();
@@ -51,37 +50,27 @@ app.get('/api/videos/:id', (req, res) => {
   res.json(db[id]);
 });
 
-// 🎬 Video player endpoint
+// Video player endpoint (serve HTML)
 app.get('/video', (req, res) => {
   const id = req.query.id;
   if (!id) return res.status(400).send('Missing video id');
 
   const db = readDB();
-  if (!db[id]) return res.status(404).send('Video not found');
+  const video = db[id];
+  if (!video) return res.status(404).send('Video not found');
 
-  // Serve the HTML player page (public/player.html)
+  // Optional: return JSON if ?json=1
+  if (req.query.json) return res.json(video);
+
+  // Serve the HTML player page
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// List all videos (dev)
+// List all videos
 app.get('/api/videos', (req, res) => {
   const db = readDB();
   res.json(Object.values(db));
 });
-
-// Add this new endpoint
-app.get('/video', (req, res) => {
-  const id = req.query.id;
-  if (!id) return res.status(400).send('Missing id');
-
-  const db = readDB();
-  const video = db[id];
-  if (!video) return res.status(404).send('Video not found');
-
-  // Send JSON (or you can render HTML here)
-  res.json(video);
-});
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT}`));
