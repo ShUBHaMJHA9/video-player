@@ -2,29 +2,32 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
-const { MongoClient, ObjectId } = require('mongodb');
+const { MongoClient } = require('mongodb');
+const path = require('path');
 
 const app = express();
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(express.static('public')); // serve frontend files
 
 // MongoDB connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://sh23becse50:Sjha@2005@bot.exfn3.mongodb.net/?retryWrites=true&w=majority&appName=bot';
+// URL-encode password if it contains special chars (like @)
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  'mongodb+srv://sh23becse50:Sjha%402005@bot.exfn3.mongodb.net/bot?retryWrites=true&w=majority&appName=bot';
 const DB_NAME = process.env.DB_NAME || 'bot';
 const COLLECTION = 'videos';
 
-let db;
 let videosCollection;
 
 // Connect to MongoDB
-MongoClient.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+MongoClient.connect(MONGO_URI)
   .then(client => {
-    db = client.db(DB_NAME);
+    const db = client.db(DB_NAME);
     videosCollection = db.collection(COLLECTION);
-    console.log('Connected to MongoDB');
+    console.log('✅ Connected to MongoDB');
   })
   .catch(err => {
-    console.error('MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   });
 
@@ -52,12 +55,12 @@ app.post('/api/videos', async (req, res) => {
   }
 });
 
-// Get single video metadata
+// Get single video metadata by id
 app.get('/api/videos/:id', async (req, res) => {
   const id = req.params.id;
   try {
     const video = await videosCollection.findOne({ _id: id });
-    if (!video) return res.status(404).json({ error: 'not found' });
+    if (!video) return res.status(404).json({ error: 'Video not found' });
     res.json(video);
   } catch (err) {
     res.status(500).json({ error: 'Database error' });
@@ -77,7 +80,7 @@ app.get('/video', async (req, res) => {
     if (req.query.json) return res.json(video);
 
     // Serve HTML player
-    res.sendFile(require('path').join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
   } catch (err) {
     res.status(500).send('Database error');
   }
