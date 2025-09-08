@@ -833,6 +833,57 @@ body.embed-mode video {
   height: 100vh !important;
   object-fit: contain;
 }
+        /* ----------- Mobile View (max 640px) ----------- */
+@media (max-width: 640px) {
+  /* shrink icons */
+  .control-btn {
+    font-size: 1.2rem !important;
+    padding: 4px !important;
+  }
+  .material-icons {
+    font-size: 20px !important;
+  }
+  .time-display {
+    font-size: 0.8rem !important;
+  }
+
+  /* tighter gaps */
+  .control-group {
+    gap: 6px !important;
+  }
+
+  /* hide less-used buttons (move them into "More") */
+  #pipBtn,
+  #statsBtn,
+  #lockBtn,
+  #aspectDropdown,
+  #subtitleDropdown {
+    display: none !important;
+  }
+
+  /* More button always visible on mobile */
+  #moreBtn {
+    display: inline-flex !important;
+  }
+}
+
+/* ----------- Tablet View (641px–1024px) ----------- */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .control-btn {
+    font-size: 1.4rem !important;
+    padding: 6px !important;
+  }
+  .material-icons {
+    font-size: 24px !important;
+  }
+  .time-display {
+    font-size: 0.9rem !important;
+  }
+  .control-group {
+    gap: 8px !important;
+  }
+}
+
 
 </style>
 </head>
