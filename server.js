@@ -7,7 +7,7 @@ const path = require('path');
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public'))); // Ensure correct path for static files
 
 // ---------- CONFIG ----------
 const MONGO_URI = process.env.MONGO_URI;
@@ -20,10 +20,14 @@ let videosCollection = null;
 // ----------------------------
 
 async function prepareDatabase() {
-  if (!MONGO_URI) throw new Error('MONGO_URI is not set');
+  if (!MONGO_URI) {
+    throw new Error('MONGO_URI environment variable is not set');
+  }
 
   if (!dbClient) {
-    dbClient = await MongoClient.connect(MONGO_URI);
+    dbClient = await MongoClient.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 5000, // Timeout for MongoDB connection
+    });
     const db = dbClient.db(DB_NAME);
 
     const collections = await db.listCollections({ name: COLLECTION }).toArray();
@@ -37,6 +41,15 @@ async function prepareDatabase() {
   return videosCollection;
 }
 
+// Handle MongoDB connection errors gracefully
+process.on('SIGINT', async () => {
+  if (dbClient) {
+    await dbClient.close();
+    console.log('MongoDB connection closed');
+  }
+  process.exit(0);
+});
+
 // ---------- ROUTES ----------
 
 // Create new video entry
@@ -46,7 +59,7 @@ app.post('/api/videos', async (req, res) => {
     const body = req.body || {};
 
     if (!body.servers || !Array.isArray(body.servers) || body.servers.length === 0) {
-      return res.status(400).json({ error: 'servers array required' });
+      return res.status(400).json({ error: 'servers array is required and must not be empty' });
     }
 
     const id = uuidv4();
@@ -92,8 +105,13 @@ app.get('/health', async (req, res) => {
     await prepareDatabase();
     res.json({ ok: true });
   } catch {
-    res.json({ ok: false });
+    res.status(500).json({ ok: false });
   }
+});
+
+// Serve index.html for SPA (if applicable)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ---------- START SERVER ----------
