@@ -808,6 +808,32 @@
     .light-theme .overlay-play {
         color: rgba(0, 0, 0, 0.8);
     }
+
+    /* Hide everything except the video in embed mode */
+body.embed-mode .footer,
+body.embed-mode .top-bar,
+body.embed-mode .controls,
+body.embed-mode .progress-container,
+body.embed-mode .overlay-play,
+body.embed-mode .gesture-overlay,
+body.embed-mode .display-popup {
+  display: none !important;
+}
+
+body.embed-mode .video-container {
+  max-width: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+body.embed-mode video {
+  aspect-ratio: unset !important;
+  width: 100% !important;
+  height: 100vh !important;
+  object-fit: contain;
+}
+
 </style>
 </head>
 <body class="bg-gray-900 flex flex-col items-center justify-center min-h-screen">
