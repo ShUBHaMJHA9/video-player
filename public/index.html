@@ -1072,15 +1072,27 @@ body.embed-mode video {
         let isLocked = false;
         let id = new URLSearchParams(window.location.search).get('id');
 
-        // Detect embed mode by URL path
-const pathParts = window.location.pathname.split('/');
-let isEmbed = false;
+                // Detect embed mode by URL path
+            // Detect embed mode by URL path
+        const pathParts = window.location.pathname.split('/');
+        let isEmbed = false;
+        let id = null;
+        
+        if (pathParts[1] === 'embed' && pathParts[2]) {
+            id = pathParts[2]; // get id from path
+            isEmbed = true;
+            document.body.classList.add('embed-mode');
+        
+            // Build the embed URL
+            const embedUrl = `${window.location.origin}/embed/${id}`;
+        
+            // Show in the embed input field
+            const embedCodeEl = document.getElementById('embedCode');
+            if (embedCodeEl) {
+                embedCodeEl.value = `<iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+            }
+        }
 
-if (pathParts[1] === 'embed' && pathParts[2]) {
-    id = pathParts[2]; // get id from path
-    isEmbed = true;
-    document.body.classList.add('embed-mode');
-}
 
         // Initialize the player
         function init() {
