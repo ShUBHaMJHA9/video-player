@@ -249,6 +249,8 @@
         align-items: center;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         box-sizing: border-box;
+        z-index: 20; /* Ensure footer is above other elements */
+        position: relative; /* Ensure proper stacking context */
     }
 
     .embed-container {
@@ -1043,11 +1045,17 @@
             }
             try {
                 const resp = await fetch(`/api/videos/${encodeURIComponent(id)}`);
-                if (!resp.ok) throw new Error('Video not found');
+                if (!resp.ok) throw new Error(`Video not found: ${resp.status}`);
                 videoData = await resp.json();
+                if (!videoData.id) {
+                    console.error('Video data does not contain an ID');
+                    showError('Invalid video data: ID missing');
+                    return;
+                }
                 applyVideoData();
             } catch (err) {
-                showError('Failed to fetch video data.');
+                console.error('Fetch error:', err);
+                showError(`Failed to fetch video data: ${err.message}`);
             }
         }
 
@@ -1634,13 +1642,19 @@
         // Update embed code
         function updateEmbedCode() {
             const embedCodeInput = document.getElementById("embedCode");
-            if (!embedCodeInput) return;
-
-            // use the id you already got when fetching videoData
-            const id = videoData?.id;
-            if (!id) return;
-
-            const url = `${window.location.origin}/video?id=${id}`;
+            if (!embedCodeInput) {
+                console.error('Embed code input element not found');
+                return;
+            }
+        
+            if (!videoData?.id) {
+                console.warn('Video ID not available, embed code not updated');
+                embedCodeInput.value = '';
+                embedCodeInput.placeholder = 'Embed code unavailable';
+                return;
+            }
+        
+            const url = `${window.location.origin}/video?id=${encodeURIComponent(videoData.id)}`;
             embedCodeInput.value = `<iframe src="${url}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
         }
 
