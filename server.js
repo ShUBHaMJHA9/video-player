@@ -94,42 +94,9 @@ app.get('/health', async (req, res) => {
     res.status(500).json({ ok: false });
   }
 });
-// Minimal embed route (just the video player)
-app.get('/embed/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query('SELECT * FROM videos WHERE id = $1', [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).send('<h2 style="color:white;background:black">Video not found</h2>');
-    }
-
-    const video = result.rows[0];
-    const servers = video.servers || [];
-    const firstServer = servers[0] || {};
-    const qualities = firstServer.qualities || [];
-    const firstQuality = qualities[0] || {};
-    const videoUrl = firstQuality.url;
-
-    res.send(`
-      <!doctype html>
-      <html>
-        <head>
-          <meta charset="utf-8"/>
-          <style>
-            body { margin:0; background:#000; display:flex; align-items:center; justify-content:center; height:100vh; }
-            video { width:100%; height:100%; }
-          </style>
-        </head>
-        <body>
-          <video src="${videoUrl}" controls autoplay></video>
-        </body>
-      </html>
-    `);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('<h2 style="color:white;background:black">Server error</h2>');
-  }
+// Serve embed-only player
+app.get('/embed/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Serve index.html for SPA
