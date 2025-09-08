@@ -1654,8 +1654,9 @@
                 return;
             }
         
-            const url = `${window.location.origin}/video?id=${encodeURIComponent(videoData.id)}`;
+            const url = `${window.location.origin}/embed/${encodeURIComponent(videoData.id)}`;
             embedCodeInput.value = `<iframe src="${url}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
+
         }
 
 
