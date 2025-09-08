@@ -1076,7 +1076,6 @@ body.embed-mode video {
             // Detect embed mode by URL path
         const pathParts = window.location.pathname.split('/');
         let isEmbed = false;
-        let id = null;
         
         if (pathParts[1] === 'embed' && pathParts[2]) {
             id = pathParts[2]; // get id from path
@@ -1167,7 +1166,7 @@ body.embed-mode video {
             videoTitle.textContent = videoData.title || 'Untitled';
             populateServers();
             changeServer(0);
-            updateEmbedCode();   // will now insert the URL
+            updateEmbedCode(videoData.id);   // will now insert the URL
             hideLoading();
         }
 
@@ -1599,8 +1598,9 @@ body.embed-mode video {
 
             if (!embedCodeInput) return;
 
+            embedCodeInput.focus();
             embedCodeInput.select();
-            embedCodeInput.setSelectionRange(0, 99999); // mobile friendly
+                
 
             // modern clipboard API (better than execCommand)
             navigator.clipboard.writeText(embedCodeInput.value)
@@ -1743,19 +1743,20 @@ body.embed-mode video {
         }
 
         // Update embed code
-        function updateEmbedCode() {
-    const embedCodeInput = document.getElementById("embedCode");
-    if (!embedCodeInput) return;
-
-    if (!videoData?.id) {
-        embedCodeInput.value = '';
-        embedCodeInput.placeholder = 'Embed code unavailable';
-        return;
-    }
-
-    const url = `${window.location.origin}/embed/${encodeURIComponent(videoData.id)}`;
-    embedCodeInput.value = `<iframe src="${url}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
-}
+        function updateEmbedCode(videoId) {
+            const embedCodeInput = document.getElementById("embedCode");
+            if (!embedCodeInput) return;
+        
+            if (!videoId) {
+                embedCodeInput.value = '';
+                embedCodeInput.placeholder = 'Embed code unavailable';
+                return;
+            }
+        
+            const url = `${window.location.origin}/embed/${encodeURIComponent(videoId)}`;
+            embedCodeInput.value = `<iframe src="${url}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
+        }
+        
 
 
 
