@@ -705,6 +705,10 @@
     .light-theme .control-btn:hover {
         color: #ff0000;
     }
+    body.embed-mode .footer {
+  display: none !important;
+    }
+
 
     .light-theme .time-display {
         color: #000;
@@ -990,6 +994,16 @@
         let isSeeking = false;
         let isLocked = false;
         let id = new URLSearchParams(window.location.search).get('id');
+
+        // Detect embed mode by URL path
+const pathParts = window.location.pathname.split('/');
+let isEmbed = false;
+
+if (pathParts[1] === 'embed' && pathParts[2]) {
+    id = pathParts[2]; // get id from path
+    isEmbed = true;
+    document.body.classList.add('embed-mode');
+}
 
         // Initialize the player
         function init() {
@@ -1641,23 +1655,19 @@
 
         // Update embed code
         function updateEmbedCode() {
-            const embedCodeInput = document.getElementById("embedCode");
-            if (!embedCodeInput) {
-                console.error('Embed code input element not found');
-                return;
-            }
-        
-            if (!videoData?.id) {
-                console.warn('Video ID not available, embed code not updated');
-                embedCodeInput.value = '';
-                embedCodeInput.placeholder = 'Embed code unavailable';
-                return;
-            }
-        
-            const url = `${window.location.origin}/embed/${encodeURIComponent(videoData.id)}`;
-            embedCodeInput.value = `<iframe src="${url}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
+    const embedCodeInput = document.getElementById("embedCode");
+    if (!embedCodeInput) return;
 
-        }
+    if (!videoData?.id) {
+        embedCodeInput.value = '';
+        embedCodeInput.placeholder = 'Embed code unavailable';
+        return;
+    }
+
+    const url = `${window.location.origin}/embed/${encodeURIComponent(videoData.id)}`;
+    embedCodeInput.value = `<iframe src="${url}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
+}
+
 
 
         init();
